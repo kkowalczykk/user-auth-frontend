@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import UserContext from '../context/UserContext';
 import Axios from 'axios';
@@ -61,26 +61,52 @@ const Submit = styled.button`
             background: #2EBC99;
       }
 `
-
+const Error = styled.div`
+      color: tomato;
+      width: 100%;
+      padding: 3%;
+      text-align: center;
+      
+      .clearError{
+            margin-left: 10px;
+            width: 20px;
+            height: 20px;
+            background: tomato;
+            color: white;
+            cursor: pointer;
+            border: none;
+            border-radius: 50%;
+      }
+`
 
 const Login = () => {
       const [email, setEmail] = useState();
       const [password, setPassword] = useState();
       const history = useHistory();
-      const { setUserData } = useContext(UserContext);
+      const { userData, setUserData } = useContext(UserContext);
+      const [error, setError] = useState();
+
+      useEffect(() => {
+            if (userData.user) history.push('/');
+      }, [userData]);
 
       const submit = async (e) => {
             e.preventDefault();
-            const loginResponse = await Axios.post('http://localhost:5000/users/login', {
-                  email,
-                  password,
-            });
-            setUserData({
-                  token: loginResponse.data.token,
-                  user: loginResponse.data.user,
-            });
-            localStorage.setItem("auth-token", loginResponse.data.token);
-            history.push("/");
+
+            try {
+                  const loginResponse = await Axios.post('http://localhost:5000/users/login', {
+                        email,
+                        password,
+                  });
+                  setUserData({
+                        token: loginResponse.data.token,
+                        user: loginResponse.data.user,
+                  });
+                  localStorage.setItem("auth-token", loginResponse.data.token);
+                  history.push("/");
+            } catch (err) {
+                  err.response.data.msg && setError(err.response.data.msg);
+            }
       }
 
       return (
@@ -92,6 +118,7 @@ const Login = () => {
 
                         <label htmlFor="password">Password</label>
                         <input id="password" type="password" onChange={(e) => setPassword(e.target.value)} />
+                        {error && <Error>{error} <button className="clearError" onClick={() => setError(undefined)}>X</button></Error>}
                         <Submit onClick={submit}>Log in</Submit>
                   </Form>
             </Wrapper>

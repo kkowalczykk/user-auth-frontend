@@ -62,6 +62,21 @@ const Submit = styled.button`
             background: #2EBC99;
       }
 `
+const Error = styled.div`
+      color: tomato;
+      width: 100%;
+      padding: 3%;
+      text-align: center;
+      
+      .clearError{
+            margin-left: 10px;
+            background: none;
+            color: tomato;
+            cursor: pointer;
+            border: 1px solid black;
+            border-radius: 3px;
+      }
+`
 
 const Register = () => {
       const [email, setEmail] = useState();
@@ -70,29 +85,35 @@ const Register = () => {
       const [displayName, setDisplayName] = useState();
       const history = useHistory();
       const { setUserData } = useContext(UserContext);
+      const [error, setError] = useState();
 
       const submit = async (e) => {
             e.preventDefault();
-            const newUser = { email, password, passwordCheck, displayName };
-            console.log(newUser);
-            const registerResponse = await Axios.post(
-                  'http://localhost:5000/users/register',
-                  newUser
-            );
-            const loginResponse = await Axios.post('http://localhost:5000/users/login', {
-                  email,
-                  password,
-            });
-            setUserData({
-                  token: loginResponse.data.token,
-                  user: loginResponse.data.user,
-            });
-            localStorage.setItem("auth-token", loginResponse.data.token);
-            history.push("/");
+
+            try {
+                  const newUser = { email, password, passwordCheck, displayName };
+                  const registerResponse = await Axios.post(
+                        'http://localhost:5000/users/register',
+                        newUser
+                  );
+                  const loginResponse = await Axios.post('http://localhost:5000/users/login', {
+                        email,
+                        password,
+                  });
+                  setUserData({
+                        token: loginResponse.data.token,
+                        user: loginResponse.data.user,
+                  });
+                  localStorage.setItem("auth-token", loginResponse.data.token);
+                  history.push("/");
+            } catch (err) {
+                  err.response.data.msg && setError(err.response.data.msg);
+            }
       }
       return (
             <Wrapper>
                   <Title>Register</Title>
+
                   <Form>
                         <label htmlFor="register-email">Email</label>
                         <input id="register-email" type="text" onChange={(e) => setEmail(e.target.value)} />
@@ -105,7 +126,8 @@ const Register = () => {
 
                         <label htmlFor="displayName">Display Name</label>
                         <input id="displayName" type="text" onChange={(e) => setDisplayName(e.target.value)} />
-                        <Submit onClick={submit}>Register</Submit>
+                        {error && <Error>{error} <button className="clearError" onClick={() => setError(undefined)}>X</button></Error>}
+                        <Submit type="submit" onClick={submit}>Register</Submit>
                   </Form>
             </Wrapper>
       );
